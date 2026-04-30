@@ -1,0 +1,91 @@
+﻿@model StoryVM;
+
+<div class="hidden lg:p-20" id="create-story" uk-modal="">
+    <div class="bg-white uk-modal-dialog relative overflow-hidden mx-auto p-8 shadow-sm rounded-xl md:w-[520px] w-full border border-[#cabeca]">
+        <div class="text-center py-4 border-b border-[#cabeca] -mx-8">
+            <h2 class="text-2xl font-semibold text-[#4a3256]">Create Your Story</h2>
+            <button type="button" class="button__ico absolute top-1 right-0 p-2 uk-modal-close hover:bg-[#eadbf0] rounded-full">
+                <ion-icon name="close-outline" class="text-2xl text-[#4a3256]"></ion-icon>
+            </button>
+        </div>
+        <div class="space-y-6 mt-6">
+            <form asp-controller="Stories" asp-action="CreateStory" enctype="multipart/form-data">
+                <div class="w-full h-72 relative border border-[#cabeca] rounded-lg overflow-hidden bg-[#eadbf0]">
+                    <!-- Image Preview Container -->
+                    <div id="previewContainer" class="absolute inset-0 w-full h-full z-20" style="display: none;">
+                        <img id="storyPreview" class="w-full h-full object-cover" alt="Story preview" />
+                    </div>
+
+                    <!-- Upload Interface -->
+                    <div id="uploadInterface" class="absolute inset-0 z-10 flex flex-col items-center justify-center w-full bg-gradient-to-t from-[#d2b9e0]/50 to-transparent">
+                        <ion-icon id="storyUploadIcon" name="image" class="text-4xl text-[#4a3256]"></ion-icon>
+                        <span id="storyUploadBtn" class="text-[#4a3256] mt-3 font-medium cursor-pointer">Upload Your Image</span>
+                        <input id="storyUpload" name="Image" type="file" accept="image/png, image/jpeg" class="hidden" />
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mt-4">
+                    <div class="flex items-start gap-3">
+                        <ion-icon name="time-outline" class="text-3xl text-white rounded-full bg-[#4a3256] p-2"></ion-icon>
+                        <p class="text-sm text-[#4a3256] font-medium">Your Story will be available <br> for <span class="font-bold text-[#4a3256]">24 Hours</span></p>
+                    </div>
+                    <button type="submit" class="bg-[#4a3256] hover:bg-[#3a015c] text-white px-6 py-2 rounded-lg transition-all">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const storyUploadBtn = document.getElementById('storyUploadBtn');
+        const storyUpload = document.getElementById('storyUpload');
+        const previewContainer = document.getElementById('previewContainer');
+        const storyPreview = document.getElementById('storyPreview');
+        const uploadInterface = document.getElementById('uploadInterface');
+
+        // Handle click on the upload button
+        storyUploadBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            storyUpload.click();
+        });
+
+        // Handle file selection
+        storyUpload.addEventListener('change', function(event) {
+            const file = this.files[0];
+
+            if (file) {
+                // Read and display the selected image
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    // Set the image source
+                    storyPreview.src = e.target.result;
+
+                    // Show the preview and hide the upload interface
+                    previewContainer.style.display = 'block';
+                    uploadInterface.style.display = 'none';
+                };
+
+                reader.readAsDataURL(file);
+            } else {
+                // Reset if no file is selected
+                previewContainer.style.display = 'none';
+                uploadInterface.style.display = 'flex';
+                storyPreview.src = '';
+            }
+        });
+
+        // Reset on modal close
+        document.querySelector('.uk-modal-close').addEventListener('click', function() {
+            // Reset the form on close
+            setTimeout(() => {
+                previewContainer.style.display = 'none';
+                uploadInterface.style.display = 'flex';
+                storyPreview.src = '';
+                storyUpload.value = '';
+            }, 300);
+        });
+    });
+</script>

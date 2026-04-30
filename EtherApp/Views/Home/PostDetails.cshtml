@@ -1,0 +1,152 @@
+﻿@model Post
+
+<main id="site__main" class="2xl:ml-[--w-side] xl:ml-[--w-side-sm] p-4 h-100vh mt-[--m-top] bg-[#eadbf0]">
+    <div class="lg:flex 2xl:gap-8 gap-6 max-w-[1200px] mx-auto" id="js-oversized">
+        <div class="mx-auto flex-1">
+            <div class="md:max-w-[700px] mx-auto">
+                <!-- Back button -->
+                <div class="mb-4">
+                    <a asp-controller="Home" asp-action="Index" class="inline-flex items-center gap-2 text-[#4a3256] font-medium hover:text-[#4a3256]/80 transition-colors">
+                        <ion-icon name="arrow-back-outline" class="text-xl"></ion-icon>
+                        <span>Back to feed</span>
+                    </a>
+                </div>
+
+                <!-- Post Card -->
+                <div id="posts-container">
+                    <partial name="Home/_Post" model="Model" view-data='new ViewDataDictionary(ViewData){ {"ShowAllComments", true} }' />
+                </div>
+                <!-- Related Content Section -->
+                <div class="mt-6 bg-white rounded-xl shadow-md p-4 border border-[#cabeca] lg:hidden">
+                    <h3 class="font-semibold text-[#4a3256] mb-3">Who to follow</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <img src="~/images/avatar/User.png" class="w-9 h-9 rounded-full border border-[#cabeca]" />
+                            <div class="flex-1">
+                                <p class="font-medium text-[#4a3256]">Suggested User</p>
+                                <p class="text-xs text-[#cabeca]">@@@("suggested_user")</p>
+                            </div>
+                            <button type="button" class="bg-[#4a3256] hover:bg-opacity-90 transition-all ease-in-out duration-200 text-xs text-white rounded-full cursor-pointer px-3 py-1.5">Follow</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="w-80 lg:block hidden">
+            <div class="lg:space-y-4 lg:pb-8 sticky top-[calc(var(--m-top)+20px)]">
+                <!-- User Info -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-[#cabeca]">
+                    <div class="flex items-center gap-3 mb-4">
+                        <a asp-controller="User" asp-action="Details" asp-route-userId="@Model.UserId">
+                            <img src="@Url.Content("~/" + (string.IsNullOrEmpty(Model.User.ProfilePictureUrl) ? "images/avatar/User.png" : Model.User.ProfilePictureUrl))"
+                                 class="w-12 h-12 rounded-full object-cover border-2 border-[#4a3256]" alt="Profile Picture" />
+                        </a>
+                        <div>
+                            <a asp-controller="User" asp-action="Details" asp-route-userId="@Model.UserId"
+                               class="font-semibold text-[#4a3256] hover:underline">@Model.User.FullName</a>
+                            <p class="text-xs text-[#cabeca]">@Model.User.UserName</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between text-sm text-center py-2 border-t border-b border-[#cabeca] mb-3">
+                        <div class="flex-1">
+                            <p class="font-semibold text-[#4a3256]">Posts</p>
+                            <p class="text-[#cabeca]" id="user-post-count">--</p>
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-semibold text-[#4a3256]">Friends</p>
+                            <p class="text-[#cabeca]" id="user-friends-count">--</p>
+                        </div>
+                    </div>
+
+                    <a asp-controller="User" asp-action="Details" asp-route-userId="@Model.UserId"
+                       class="block text-center text-sm font-medium text-[#4a3256] hover:underline">
+                        View Profile
+                    </a>
+                </div>
+
+                <!-- Similar Posts -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-[#cabeca]">
+                    <h3 class="font-semibold text-[#4a3256] mb-3">More from this user</h3>
+                    <div class="space-y-3" id="related-posts-container">
+                        <!-- Content will be loaded via JavaScript -->
+                        <div class="text-center text-sm text-[#cabeca] py-2">
+                            <div class="inline-block animate-spin mr-2">
+                                <ion-icon name="reload-outline"></ion-icon>
+                            </div>
+                            Loading related posts...
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        // Load related posts from the same user
+                        loadRelatedPosts(@Model.UserId, @Model.Id);
+
+                        // Load user statistics
+                        loadUserStats(@Model.UserId);
+                    });
+
+                    function loadUserStats(userId) {
+                        fetch(`/User/GetUserStats?userId=${userId}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    document.getElementById('user-post-count').textContent = data.postCount;
+                                    document.getElementById('user-friends-count').textContent = data.friendsCount;
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error loading user stats:', error);
+                            });
+                    }
+
+                    function loadRelatedPosts(userId, currentPostId) {
+                        fetch(`/User/GetUserRelatedPosts?userId=${userId}&currentPostId=${currentPostId}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                const container = document.getElementById('related-posts-container');
+                                container.innerHTML = '';
+
+                                if (data.length === 0) {
+                                    container.innerHTML = '<p class="text-sm text-[#cabeca]">No other posts from this user.</p>';
+                                    return;
+                                }
+
+                                data.forEach((post, index) => {
+                                    const isLast = index === data.length - 1;
+                                    const postElement = document.createElement('div');
+                                    postElement.className = `flex items-start gap-3 pb-2 ${!isLast ? 'border-b border-[#cabeca]' : ''}`;
+
+                                    // Make the entire post item clickable
+                                    postElement.style.cursor = 'pointer';
+                                    postElement.onclick = function() {
+                                        window.location.href = `/Home/PostDetails/${post.id}`;
+                                    };
+
+                                    postElement.innerHTML = `
+                                        <div class="w-12 h-12 bg-[#eadbf0] rounded-md flex items-center justify-center shrink-0">
+                                            <ion-icon name="${post.hasImage ? 'image-outline' : 'document-text'}" class="text-xl text-[#4a3256]"></ion-icon>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="text-sm font-medium text-[#4a3256] line-clamp-2 hover:underline">${post.title}</div>
+                                            <p class="text-xs text-[#cabeca] mt-1">Posted ${post.daysAgo === 0 ? 'today' : post.daysAgo + 'd ago'}</p>
+                                        </div>
+                                    `;
+                                    container.appendChild(postElement);
+                                });
+                            })
+                            .catch(error => {
+                                console.error('Error loading related posts:', error);
+                                document.getElementById('related-posts-container').innerHTML =
+                                    '<p class="text-sm text-[#cabeca]">Unable to load related posts.</p>';
+                            });
+                    }
+                </script>
+            </div>
+        </div>
+    </div>
+</main>
