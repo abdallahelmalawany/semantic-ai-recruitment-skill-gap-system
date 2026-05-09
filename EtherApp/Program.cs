@@ -36,6 +36,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IInterestService, InterestService>();
 builder.Services.AddHttpClient();
+builder.Services.AddScoped<ISkillMatchService, SkillMatchService>();
 
 // Add these lines to your service registration
 builder.Services.AddHttpClient("HuggingFace", client =>
